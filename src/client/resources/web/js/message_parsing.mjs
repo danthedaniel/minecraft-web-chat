@@ -89,13 +89,13 @@ function escapeHtml(unsafe) {
         return '';
     }
     return unsafe
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;')
-        .replace(/`/g, '&#x60;')
-        .replace(/\\/g, '&#x5c;');
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;')
+        .replaceAll("`", '&#x60;')
+        .replaceAll("\\", '&#x5c;');
 }
 
 // Imitates Minecraft's obfuscated text. 
