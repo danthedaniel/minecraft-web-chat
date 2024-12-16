@@ -132,6 +132,8 @@ export function initializeObfuscation() {
 
             for (let i = 0; i < elementsToProcess; i++) {
                 const element = elements[i];
+                if (!element) continue;
+
                 const length = element.textContent ? element.textContent.length : 0;
                 let result = '';
 

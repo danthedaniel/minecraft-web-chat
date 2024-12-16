@@ -2,6 +2,7 @@
 'use strict';
 
 // https://github.com/PrismarineJS/minecraft-data 1.21.1
+/** @type {Record<string, string>} */
 export const translations = {
     "accessibility.onboarding.accessibility.button": "Accessibility Settings...",
     "accessibility.onboarding.screen.narrator": "Press enter to enable the narrator",
