@@ -47,6 +47,7 @@ public class WebInterface {
                 ".html", "text/html",
                 ".css", "text/css",
                 ".js", "application/javascript",
+                ".mjs", "application/javascript",
                 ".png", "image/png",
                 ".webmanifest", "application/manifest+json"
         );
