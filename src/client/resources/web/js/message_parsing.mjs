@@ -89,13 +89,13 @@ function escapeHtml(unsafe) {
         return '';
     }
     return unsafe
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;')
-        .replaceAll("`", '&#x60;')
-        .replaceAll("\\", '&#x5c;');
+        .replaceAll('`', '&#x60;')
+        .replaceAll('\\', '&#x5c;');
 }
 
 // Imitates Minecraft's obfuscated text. 
