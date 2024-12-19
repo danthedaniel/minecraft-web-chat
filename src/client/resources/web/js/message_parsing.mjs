@@ -404,7 +404,7 @@ export function initializeObfuscation() {
 /**
  * Handles URL detection and conversion while maintaining XSS protection.
  * @param {string} text
- * @returns {(Element | Text)[]}
+ * @returns {(Text | Element)[]}
  */
 function linkifyText(text) {
     const result = [];
@@ -442,10 +442,10 @@ function linkifyText(text) {
  * Handles numbered substitution (%1$s, %2$s, etc.)
  * @param {string} template
  * @param {(string | Component)[]} args
- * @returns {(Element | Text)[]}
+ * @returns {(Text | Element)[]}
  */
 function numberedSubstitution(template, args) {
-    /** @type {(Element | Text)[]} */
+    /** @type {(Text | Element)[]} */
     const result = [];
     const regex = /%(\d+)\$s/g;
     let lastIndex = 0;
@@ -484,10 +484,10 @@ function numberedSubstitution(template, args) {
  * Handles simple %s placeholders.
  * @param {string} template
  * @param {(string | Component)[]} args
- * @returns {(Element | Text)[]}
+ * @returns {(Text | Element)[]}
  */
 function simpleSubstitution(template, args) {
-    /** @type {(Element | Text)[]} */
+    /** @type {(Text | Element)[]} */
     const result = [];
     const regex = /%s/g;
     /** Index into template */
@@ -529,7 +529,7 @@ function simpleSubstitution(template, args) {
  * Supports both numbered (%1$s) and sequential (%s) placeholder formats.
  * @param {string} key
  * @param {(string | Component)[]} args
- * @returns {(Element | Text)[]}
+ * @returns {(Text | Element)[]}
  */
 function formatTranslation(key, args) {
     if (!key) {
@@ -582,12 +582,17 @@ function formatComponentPlainText(component) {
     if (component.text) {
         result += component.text;
     } else if (component.translate) {
-        result += formatTranslation(component.translate, component.with ?? []).map(e => e.textContent ?? '').join('');
+        result += formatTranslation(component.translate, component.with ?? [])
+            .map(component => component.textContent ?? '')
+            .join('');
     }
 
     if (component.extra) {
         result += component.extra
-            .map(e => typeof e === 'string' ? e : formatComponentPlainText(e))
+            .map(component => {
+                if (typeof component === 'string') return component;
+                return formatComponentPlainText(component);
+            })
             .join('');
     }
 
@@ -646,7 +651,7 @@ function formatHoverEvent(hoverEvent) {
 /**
  * Formats a Minecraft component into HTML.
  * @param {Component} component
- * @returns {Element | Text}
+ * @returns {Text | Element}
  */
 export function formatComponent(component) {
     const result = document.createElement('span');
@@ -687,16 +692,22 @@ export function formatComponent(component) {
 
         if (component.text) {
             linkifyText(component.text)
-                .forEach(e => result.appendChild(e));
+                .forEach(component => result.appendChild(component));
         } else if (component.translate) {
             formatTranslation(component.translate, component.with ?? [])
-                .forEach(e => result.appendChild(e));
+                .forEach(component => result.appendChild(component));
         }
 
         if (component.extra) {
             component.extra
-                .map(e => typeof e === 'string' ? document.createTextNode(e) : formatComponent(e))
-                .forEach(e => result.appendChild(e));
+                .map(component => {
+                    if (typeof component === 'string') {
+                        return document.createTextNode(component);
+                    }
+
+                    return formatComponent(component);
+                })
+                .forEach(component => result.appendChild(component));
         }
     
         if (result.textContent && result.textContent.length > MAX_CHAT_LENGTH) {
