@@ -582,7 +582,7 @@ function formatComponentPlainText(component) {
     if (component.text) {
         result += component.text;
     } else if (component.translate) {
-        result += formatTranslation(component.translate, component.with || []).map(e => e.textContent || '').join('');
+        result += formatTranslation(component.translate, component.with ?? []).map(e => e.textContent ?? '').join('');
     }
 
     if (component.extra) {
@@ -602,7 +602,7 @@ function formatComponentPlainText(component) {
 function formatHoverEvent(hoverEvent) {
     switch (hoverEvent.action) {
         case 'show_text':
-            const contents = hoverEvent.contents || hoverEvent.value;
+            const contents = hoverEvent.contents ?? hoverEvent.value;
             if (typeof contents === 'undefined') {
                 console.warn('HoverEvent.contents is undefined');
                 return '';
@@ -689,7 +689,7 @@ export function formatComponent(component) {
             linkifyText(component.text)
                 .forEach(e => result.appendChild(e));
         } else if (component.translate) {
-            formatTranslation(component.translate, component.with || [])
+            formatTranslation(component.translate, component.with ?? [])
                 .forEach(e => result.appendChild(e));
         }
 
@@ -707,6 +707,6 @@ export function formatComponent(component) {
         return result;
     } catch (error) {
         console.error('Error formatting component:', error);
-        return document.createTextNode(String(component.text || '').slice(0, MAX_CHAT_LENGTH));
+        return document.createTextNode(String(component.text ?? '').slice(0, MAX_CHAT_LENGTH));
     }
 }
