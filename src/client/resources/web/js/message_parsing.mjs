@@ -59,19 +59,22 @@ const VALID_HOVER_EVENTS = [
 /**
  * @typedef {Object} ShowTextHoverEvent
  * @property {'show_text'} action - Displays a text tooltip
- * @property {string | Component | (string | Component)[]} contents - The text content to show in the tooltip
+ * @property {string | Component | (string | Component)[]} [contents] - The text content to show in the tooltip
+ * @property {string | Component | (string | Component)[]} [value] - Deprecated: The text content to show in the tooltip
  */
 
 /**
  * @typedef {Object} ShowItemHoverEvent
  * @property {'show_item'} action - Displays an item's tooltip
- * @property {{ id: string, count?: number, tag?: string }} contents - The item data to show
+ * @property {{ id: string, count?: number, tag?: string }} [contents] - The item data to show
+ * @property {string} [value] - Deprecated: SNBT representation of the item data to show.
  */
 
 /**
  * @typedef {Object} ShowEntityHoverEvent
  * @property {'show_entity'} action - Displays entity information
- * @property {{ type: string, id: unknown, name?: string }} contents - The entity data to show
+ * @property {{ type: string, id: unknown, name?: string }} [contents] - The entity data to show
+ * @property {string} [value] - Deprecated: SNBT representation of the entity data to show.
  */
 
 /**
@@ -137,64 +140,120 @@ export function assertIsComponent(component, path = []) {
             throw new ComponentError(`HoverEvent.action is not a valid hover event: ${hoverEvent.action}`, [...path, 'action']);
         }
 
-        if (!('contents' in hoverEvent)) {
-            throw new ComponentError("HoverEvent.contents is not present", path);
-        }
-
         switch (hoverEvent.action) {
             case 'show_text':
-                if (typeof hoverEvent.contents === 'string') return;
-                if (Array.isArray(hoverEvent.contents)) {
-                    hoverEvent.contents.forEach(component => {
-                        if (typeof component === 'string') return;
-                        assertIsComponent(component, [...path, 'contents']);
-                    });
-                } else {
-                    assertIsComponent(hoverEvent.contents, [...path, 'contents']);
-                }
+                assertIsShowTextHoverEvent(hoverEvent, path);
                 break;
             case 'show_item':
-                if (typeof hoverEvent.contents !== 'object' || hoverEvent.contents === null) {
-                    throw new ComponentError("HoverEvent.contents is not an object", [...path, 'contents']);
-                }
-
-                if (!('id' in hoverEvent.contents)) {
-                    throw new ComponentError("HoverEvent.contents.id is not present", [...path, 'contents', 'id']);
-                }
-
-                if (typeof hoverEvent.contents.id !== 'string') {
-                    throw new ComponentError("HoverEvent.contents.id is not a string", [...path, 'contents', 'id']);
-                }
-
-                if ('count' in hoverEvent.contents && typeof hoverEvent.contents.count !== 'number') {
-                    throw new ComponentError("HoverEvent.contents.count is not a number", [...path, 'contents', 'count']);
-                }
-
-                if ('tag' in hoverEvent.contents && typeof hoverEvent.contents.tag !== 'string') {
-                    throw new ComponentError("HoverEvent.contents.tag is not a string", [...path, 'contents', 'tag']);
-                }
+                assertIsShowItemHoverEvent(hoverEvent, path);
                 break;
             case 'show_entity':
-                if (typeof hoverEvent.contents !== 'object' || hoverEvent.contents === null) {
-                    throw new ComponentError("HoverEvent.contents is not an object", [...path, 'contents']);
-                }
-
-                if (!('type' in hoverEvent.contents)) {
-                    throw new ComponentError("HoverEvent.contents.type is not present", [...path, 'contents', 'type']);
-                }
-
-                if (typeof hoverEvent.contents.type !== 'string') {
-                    throw new ComponentError("HoverEvent.contents.type is not a string", [...path, 'contents', 'type']);
-                }
-
-                if (!('id' in hoverEvent.contents)) {
-                    throw new ComponentError("HoverEvent.contents.id is not present", [...path, 'contents', 'id']);
-                }
-
-                if ('name' in hoverEvent.contents && typeof hoverEvent.contents.name !== 'string') {
-                    throw new ComponentError("HoverEvent.contents.name is not a string", [...path, 'contents', 'name']);
-                }
+                assertIsShowEntityHoverEvent(hoverEvent, path);
                 break;
+        }
+    }
+
+    /**
+     * Checks if a value is a valid show_text hover event.
+     * @param {object} hoverEvent
+     * @param {string[]} path
+     * @throws If the hoverEvent is not a valid {@link ShowTextHoverEvent} object.
+     */
+    function assertIsShowTextHoverEvent(hoverEvent, path) {
+        if (!('contents' in hoverEvent) && !('value' in hoverEvent)) {
+            throw new ComponentError("HoverEvent does not have a contents or value property", path);
+        }
+
+        const contents = 'contents' in hoverEvent ? hoverEvent.contents : hoverEvent.value;
+        if (typeof contents === 'string') return;
+        if (Array.isArray(contents)) {
+            contents.forEach((component, index) => {
+                if (typeof component === 'string') return;
+
+                assertIsComponent(component, [...path, 'contents', index.toString()]);
+            });
+        } else {
+            assertIsComponent(contents, [...path, 'contents']);
+        }
+    }
+
+    /**
+     * Checks if a value is a valid show_item hover event.
+     * @param {object} hoverEvent
+     * @param {string[]} path
+     * @throws If the hoverEvent is not a valid {@link ShowItemHoverEvent} object.
+     */
+    function assertIsShowItemHoverEvent(hoverEvent, path) {
+        if (!('contents' in hoverEvent) && !('value' in hoverEvent)) {
+            throw new ComponentError("HoverEvent does not have a contents or value property", path);
+        }
+
+        if ('value' in hoverEvent) {
+            if (typeof hoverEvent.value !== 'string') {
+                throw new ComponentError("HoverEvent.value is not a string", [...path, 'value']);
+            }
+
+            return;
+        }
+
+        if (typeof hoverEvent.contents !== 'object' || hoverEvent.contents === null) {
+            throw new ComponentError("HoverEvent.contents is not an object", [...path, 'contents']);
+        }
+
+        if (!('id' in hoverEvent.contents)) {
+            throw new ComponentError("HoverEvent.contents.id is not present", [...path, 'contents', 'id']);
+        }
+
+        if (typeof hoverEvent.contents.id !== 'string') {
+            throw new ComponentError("HoverEvent.contents.id is not a string", [...path, 'contents', 'id']);
+        }
+
+        if ('count' in hoverEvent.contents && typeof hoverEvent.contents.count !== 'number') {
+            throw new ComponentError("HoverEvent.contents.count is not a number", [...path, 'contents', 'count']);
+        }
+
+        if ('tag' in hoverEvent.contents && typeof hoverEvent.contents.tag !== 'string') {
+            throw new ComponentError("HoverEvent.contents.tag is not a string", [...path, 'contents', 'tag']);
+        }
+    }
+
+    /**
+     * Checks if a value is a valid show_entity hover event.
+     * @param {object} hoverEvent
+     * @param {string[]} path
+     * @throws If the hoverEvent is not a valid {@link ShowEntityHoverEvent} object.
+     */
+    function assertIsShowEntityHoverEvent(hoverEvent, path) {
+        if (!('contents' in hoverEvent) && !('value' in hoverEvent)) {
+            throw new ComponentError("HoverEvent does not have a contents or value property", path);
+        }
+
+        if ('value' in hoverEvent) {
+            if (typeof hoverEvent.value !== 'string') {
+                throw new ComponentError("HoverEvent.value is not a string", [...path, 'value']);
+            }
+
+            return;
+        }
+
+        if (typeof hoverEvent.contents !== 'object' || hoverEvent.contents === null) {
+            throw new ComponentError("HoverEvent.contents is not an object", [...path, 'contents']);
+        }
+
+        if (!('type' in hoverEvent.contents)) {
+            throw new ComponentError("HoverEvent.contents.type is not present", [...path, 'contents', 'type']);
+        }
+
+        if (typeof hoverEvent.contents.type !== 'string') {
+            throw new ComponentError("HoverEvent.contents.type is not a string", [...path, 'contents', 'type']);
+        }
+
+        if (!('id' in hoverEvent.contents)) {
+            throw new ComponentError("HoverEvent.contents.id is not present", [...path, 'contents', 'id']);
+        }
+
+        if ('name' in hoverEvent.contents && typeof hoverEvent.contents.name !== 'string') {
+            throw new ComponentError("HoverEvent.contents.name is not a string", [...path, 'contents', 'name']);
         }
     }
 
@@ -543,25 +602,43 @@ function formatComponentPlainText(component) {
 function formatHoverEvent(hoverEvent) {
     switch (hoverEvent.action) {
         case 'show_text':
-            if (typeof hoverEvent.contents === 'string') {
-                return hoverEvent.contents;
+            const contents = hoverEvent.contents || hoverEvent.value;
+            if (typeof contents === 'undefined') {
+                console.warn('HoverEvent.contents is undefined');
+                return '';
             }
 
-            if (Array.isArray(hoverEvent.contents)) {
-                return hoverEvent.contents.map(component => {
+            if (typeof contents === 'string') {
+                return contents;
+            }
+
+            if (Array.isArray(contents)) {
+                return contents.map(component => {
                     if (typeof component === 'string') return component;
                     return formatComponentPlainText(component);
                 }).join('');
             }
 
-            return formatComponentPlainText(hoverEvent.contents);
+            return formatComponentPlainText(contents);
         case 'show_item':
+            if (!hoverEvent.contents) {
+                // Don't attempt to parse SNBT data in hoverEvent.value
+                console.warn('Unsupported legacy hoverEvent');
+                return '';
+            }
+
             if (hoverEvent.contents.count) {
                 return `${hoverEvent.contents.count}x ${hoverEvent.contents.id}`;
             }
 
             return hoverEvent.contents.id;
         case 'show_entity':
+            if (!hoverEvent.contents) {
+                // Don't attempt to parse SNBT data in hoverEvent.value
+                console.warn('Unsupported legacy hoverEvent');
+                return '';
+            }
+
             return hoverEvent.contents.name || "Unnamed Entity";
     }
 }
