@@ -41,7 +41,7 @@ const VALID_HOVER_EVENTS = [
  * @typedef {Object} Component
  * @property {string} [text] - Text content
  * @property {string} [translate] - Translation key
- * @property {Component[]} [with] - Translation parameters
+ * @property {(string | Component)[]} [with] - Translation parameters
  * @property {(string | Component)[]} [extra] - Additional components to append
  * @property {string} [color] - Text color - can be a named color or hex value
  * @property {boolean} [bold] - Whether text should be bold
@@ -251,7 +251,11 @@ export function assertIsComponent(component, path = []) {
             throw new ComponentError("Component.with is not an array", [...path, 'with']);
         }
 
-        component.with.forEach((component, index) => assertIsComponent(component, [...path, 'with', index.toString()]));
+        component.with.forEach((component, index) =>{
+            if (typeof component === 'string') return;
+
+            assertIsComponent(component, [...path, 'with', index.toString()]);
+        });
     }
 
     if ('hoverEvent' in component) {
@@ -378,7 +382,7 @@ function linkifyText(text) {
 /**
  * Handles numbered substitution (%1$s, %2$s, etc.)
  * @param {string} template
- * @param {Component[]} args
+ * @param {(string | Component)[]} args
  * @returns {(Element | Text)[]}
  */
 function numberedSubstitution(template, args) {
@@ -399,6 +403,8 @@ function numberedSubstitution(template, args) {
         if (!value) {
             console.warn(`Missing argument ${index} for template "${template}"`);
             result.push(document.createTextNode(match[0]));
+        } else if (typeof value === 'string') {
+            result.push(document.createTextNode(value));
         } else {
             result.push(formatComponent(value));
         }
@@ -418,7 +424,7 @@ function numberedSubstitution(template, args) {
 /**
  * Handles simple %s placeholders.
  * @param {string} template
- * @param {Component[]} args
+ * @param {(string | Component)[]} args
  * @returns {(Element | Text)[]}
  */
 function simpleSubstitution(template, args) {
@@ -442,6 +448,8 @@ function simpleSubstitution(template, args) {
         if (!value) {
             console.warn(`Missing argument ${index} for template "${template}"`);
             result.push(document.createTextNode('%s'));
+        } else if (typeof value === 'string') {
+            result.push(document.createTextNode(value));
         } else {
             result.push(formatComponent(value));
         }
@@ -461,7 +469,7 @@ function simpleSubstitution(template, args) {
 /**
  * Supports both numbered (%1$s) and sequential (%s) placeholder formats.
  * @param {string} key
- * @param {Component[]} args
+ * @param {(string | Component)[]} args
  * @returns {(Element | Text)[]}
  */
 function formatTranslation(key, args) {
@@ -477,7 +485,13 @@ function formatTranslation(key, args) {
             return [document.createTextNode(key)];
         }
 
-        return args.map(formatComponent);
+        return args.map(value => {
+            if (typeof value === 'string') {
+                return document.createTextNode(value);
+            }
+
+            return formatComponent(value);
+        });
     }
 
     const template = translations[key];
